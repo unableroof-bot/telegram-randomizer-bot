@@ -20,7 +20,8 @@ inline_menu = InlineKeyboardMarkup(
 )
 
 # --- Команда /start ---
-@dp.message(commands=["start"])
+from aiogram.filters import Command 
+@dp.message(Command("start"))
 async def start(message: types.Message):
     await message.answer("Выбери действие:", reply_markup=inline_menu)
 
