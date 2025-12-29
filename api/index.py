@@ -62,7 +62,8 @@ async def join_handler(callback: types.CallbackQuery):
 
 # Нажатие кнопки "Рандомим"
 @dp.callback_query(lambda c: c.data == "random")
-async def random_handler(callback: Types.CallbackQuery):
+async def random_handler(callback: types.CallbackQuery):
+
     chat_id = callback.message.chat.id
 
     if chat_id not in participants or len(participants[chat_id]) == 0:
