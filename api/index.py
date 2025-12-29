@@ -12,10 +12,8 @@ bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 app = FastAPI()
 
-# Хранилище участников по чатам
 participants = {}
 
-# Кнопки
 pick_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="🙋 Участвую", callback_data="join")],
@@ -23,18 +21,12 @@ pick_menu = InlineKeyboardMarkup(
     ]
 )
 
-# Команда /pick
 @dp.message(Command("pick"))
 async def pick_command(message: types.Message):
     chat_id = message.chat.id
-    participants[chat_id] = []  # новый раунд
-    await message.answer(
-        "Начинаем сбор участников!\n"
-        "Нажимай «🙋 Участвую», чтобы войти в список.",
-        reply_markup=pick_menu
-    )
+    participants[chat_id] = []
+    await message.answer("Начинаем сбор участников!", reply_markup=pick_menu)
 
-# Нажатие кнопки "Участвую"
 @dp.callback_query(lambda c: c.data == "join")
 async def join_handler(callback: types.CallbackQuery):
     chat_id = callback.message.chat.id
@@ -43,21 +35,14 @@ async def join_handler(callback: types.CallbackQuery):
     if chat_id not in participants:
         participants[chat_id] = []
 
-    # Проверка на повтор
     if user.id in [u["id"] for u in participants[chat_id]]:
         await callback.answer("Ты уже участвуешь 😉")
         return
 
     participants[chat_id].append({"id": user.id, "name": user.full_name})
-
-    await callback.message.answer(
-        f"🙋 <b>{user.full_name}</b> участвует!\n"
-        f"Всего участников: <b>{len(participants[chat_id])}</b>"
-    )
-
+    await callback.message.answer(f"🙋 {user.full_name} участвует!")
     await callback.answer("Добавил!")
 
-# Нажатие кнопки "Рандомим"
 @dp.callback_query(lambda c: c.data == "random")
 async def random_handler(callback: types.CallbackQuery):
     chat_id = callback.message.chat.id
@@ -68,18 +53,11 @@ async def random_handler(callback: types.CallbackQuery):
         return
 
     winner = random.choice(participants[chat_id])
-    total = len(participants[chat_id])
+    participants[chat_id] = []
 
-    participants[chat_id] = []  # очищаем список
-
-    await callback.message.answer(
-        f"🎲 Разыгрывали между <b>{total}</b> участниками.\n"
-        f"🎉 Победитель: <b>{winner['name']}</b>"
-    )
-
+    await callback.message.answer(f"🎉 Победитель: <b>{winner['name']}</b>")
     await callback.answer()
 
-# Webhook
 @app.post("/")
 async def webhook(request: Request):
     data = await request.json()
