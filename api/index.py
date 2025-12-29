@@ -98,8 +98,8 @@ async def random_handler(callback: types.CallbackQuery):
 
     # Итоговое сообщение
     await callback.message.answer(
-        f"🎲 Разыгрывали между <b>{total}</b> участниками.\n"
-        f"🎉 Победитель: <b>{winner['name']}</b>"
+        f"🎲 Из <b>{total}</b> участников\n"
+        f"{winner['name']} оказался в пике своей везучести (или нет)</b>"
     )
 
     await callback.answer()
