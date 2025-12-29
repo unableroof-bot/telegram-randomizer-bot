@@ -27,8 +27,13 @@ pick_menu = InlineKeyboardMarkup(
 @dp.message(Command("pick"))
 async def pick_command(message: types.Message):
     chat_id = message.chat.id
-    participants[chat_id] = []  # очищаем список для нового раунда
-    await message.answer("Начинаем сбор участников!", reply_markup=pick_menu)
+    participants[chat_id] = []  # новый раунд
+    await message.answer(
+        "Начинаем сбор участников!\n\n"
+        "Нажимай кнопку <b>«🙋 Участвую»</b>, чтобы войти в список.\n"
+        "Когда будете готовы — жмите <b>«🎲 Рандомим»</b>.",
+        reply_markup=pick_menu
+    )
 
 # Нажатие кнопки "Участвую"
 @dp.callback_query(lambda c: c.data == "join")
@@ -36,32 +41,47 @@ async def join_handler(callback: types.CallbackQuery):
     chat_id = callback.message.chat.id
     user = callback.from_user
 
-    # создаём список, если его нет
     if chat_id not in participants:
         participants[chat_id] = []
 
-    # проверяем, не добавлен ли уже
-    if user.id not in [u["id"] for u in participants[chat_id]]:
-        participants[chat_id].append({"id": user.id, "name": user.full_name})
-        await callback.answer("Ты участвуешь!")
-    else:
-        await callback.answer("Ты уже в списке", show_alert=False)
+    # уже участвует?
+    if user.id in [u["id"] for u in participants[chat_id]]:
+        await callback.answer("Ты уже участвуешь 😉", show_alert=False)
+        return
+
+    participants[chat_id].append({"id": user.id, "name": user.full_name})
+
+    count = len(participants[chat_id])
+    # сообщение в чат, чтобы было видно, что кто-то добавился
+    await callback.message.answer(
+        f"🙋 <b>{user.full_name}</b> участвует!\n"
+        f"Сейчас в списке: <b>{count}</b> участник(ов)."
+    )
+
+    await callback.answer("Добавил в список!")
 
 # Нажатие кнопки "Рандомим"
 @dp.callback_query(lambda c: c.data == "random")
-async def random_handler(callback: types.CallbackQuery):
+async def random_handler(callback: Types.CallbackQuery):
     chat_id = callback.message.chat.id
 
     if chat_id not in participants or len(participants[chat_id]) == 0:
-        await callback.answer("Пока никто не участвует!", show_alert=True)
+        await callback.message.answer("❗ Пока никто не участвует.\nСначала нажмите «🙋 Участвую».")
+        await callback.answer("Список пуст", show_alert=False)
         return
 
+    # выбираем победителя
     winner = random.choice(participants[chat_id])
-    participants[chat_id] = []  # очищаем список после выбора
+    total = len(participants[chat_id])
 
-    await callback.message.answer(f"🎉 Победитель: <b>{winner['name']}</b>")
-    await callback.answer()
+    participants[chat_id] = []  # очищаем список после рандома
 
+    await callback.message.answer(
+        f"🎲 Разыгрывали между <b>{total}</b> участниками.\n"
+        f"🎉 Победитель: <b>{winner['name']}</b>"
+    )
+    await callback.answer("Готово!")
+    
 # Webhook
 @app.post("/")
 async def webhook(request: Request):
