@@ -10,6 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
+print("Bot started, handlers loading...")
 app = FastAPI()
 
 participants = {}
@@ -29,6 +30,7 @@ async def pick_command(message: types.Message):
 
 @dp.callback_query(lambda c: c.data == "join")
 async def join_handler(callback: types.CallbackQuery):
+    print("JOIN callback received:", callback.from_user.id)
     chat_id = callback.message.chat.id
     user = callback.from_user
 
@@ -42,9 +44,11 @@ async def join_handler(callback: types.CallbackQuery):
     participants[chat_id].append({"id": user.id, "name": user.full_name})
     await callback.message.answer(f"🙋 {user.full_name} участвует!")
     await callback.answer("Добавил!")
+    print("Handlers loaded!")
 
 @dp.callback_query(lambda c: c.data == "random")
 async def random_handler(callback: types.CallbackQuery):
+    print("RANDOM callback received:", callback.from_user.id)
     chat_id = callback.message.chat.id
 
     if chat_id not in participants or len(participants[chat_id]) == 0:
@@ -64,3 +68,4 @@ async def webhook(request: Request):
     update = types.Update(**data)
     await dp.feed_update(bot, update)
     return {"ok": True}
+
